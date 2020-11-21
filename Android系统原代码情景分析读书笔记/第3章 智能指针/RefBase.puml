@@ -1,0 +1,27 @@
+@startuml
+title: RefBase
+
+class weakref_type{
+    + incWeak(id: const void*): void
+    + decWeak(id: const void*): void
+    + attemptincStrong(id: const void*): bool
+    + attemptdecWeak(id: const void*): bool
+}
+
+class weakref_imp{
+    + mStrong: volatile int32_t
+    + mWeak: volatile int32_t
+    + mBase: RefBase* const
+    + mFlags: volatile int32_t
+}
+
+class RefBase{
+    - mRefs: weakref_imp* const
+    + incStrong(id: const void*): void
+    + decStrong(id: const void*): void
+}
+
+weakref_type <|-- weakref_imp
+weakref_imp <--o RefBase
+
+@enduml
