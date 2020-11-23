@@ -91,7 +91,7 @@
 #### struct logger_entry
 
 `kernel/goldfish/drivers/staging/android/logger.h`
-```c
+```cpp
 struct logger_entry {
 	__u16		len;	/* length of the payload */
 	__u16		__pad;	/* no matter what, we get 2 bytes of padding */
@@ -112,7 +112,7 @@ struct logger_entry {
 #### struct logger_log
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 /*
  * struct logger_log - represents a specific log, such as 'main' or 'radio'
  *
@@ -137,7 +137,7 @@ struct logger_log {
 
 `kernel/goldfish/drivers/staging/android/logger.c`
 
-```c
+```cpp
 /*
  * struct logger_reader - a logging device open for reading
  *
@@ -157,7 +157,7 @@ struct logger_reader {
 日志设备的初始化过程是在 `Logger` 日志驱动程序的入口函数 `logger_init` 中进行的。在分析这个函数之前，我们首先介绍三个结构体变量 `log_main` 、 `log_events` 和 `log_radio` ，它们的类型均为 `struct logger` ，分别用来保存 `main` 、 `events` 和 `radio` 三种类型的日志记录，如下所示。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 /*
  * Defines a log structure with name 'NAME' and a size of 'SIZE' bytes, which
  * must be a power of two, greater than LOGGER_ENTRY_MAX_LEN, and less than
@@ -192,7 +192,7 @@ DEFINE_LOGGER_DEVICE(log_radio, LOGGER_LOG_RADIO, 64*1024)
 每一个日志缓冲区都对应有一个 `misc` 类型的日志设备，以便运行在用户空间的程序可以访问它们。每一个日志设备都对应有一个文件名，它是由参数 `NAME` 指定的。从结构体变量 `log_main` 、 `log_events` 和 `log_radio` 的定义可以看出，类型为 `main` 、 `radio` 和 `events` 的日志缓冲区对应的日志设备文件分别为 `LOGGER_LOG_MAIN` 、 `LOGGER_LOG_RADIO` 和 `LOGGER_LOG_EVENTS` 。
 
 `kernel/goldfish/drivers/staging/android/logger.h`
-```c
+```cpp
 #define LOGGER_LOG_RADIO	"log_radio"	/* radio-related messages */
 #define LOGGER_LOG_EVENTS	"log_events"	/* system/hardware events */
 #define LOGGER_LOG_MAIN		"log_main"	/* everything else */
@@ -200,7 +200,7 @@ DEFINE_LOGGER_DEVICE(log_radio, LOGGER_LOG_RADIO, 64*1024)
 `Logger` 日志驱动程序初始化完成之后，我们就可以在 `/dev/log` 目录下看到三个日志设备文件 `main` 、 `events` 和 `radio` 。这三个日志设备对应的文件操作函数表均为 `logger_fops` ，它的定义如下所示。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 static struct file_operations logger_fops = {
 	.owner = THIS_MODULE,
 	.read = logger_read,
@@ -217,7 +217,7 @@ static struct file_operations logger_fops = {
 每一个硬件设备都有自己的主设备号和从设备号。由于日志设备的类型为 `misc` ，并且同一类型的设备都具有相同的主设备号，因此，在定义这些日志设备时，就不需要指定它们的主设备号了，等到注册这些日志设备时，再统一指定。从宏 `DEFINE_LOGGER_DEVICE` 的定义可以看出，这些日志设备的从设备号被设置为 `MISC_DYNAMIC_MINOR` ，表示由系统动态分配，它的定义如下所示。
 
 `kernel/goldfish/include/linux/miscdevice.h`
-```c
+```cpp
 #define MISC_DYNAMIC_MINOR	255
 ```
 一般来说，我们在开发驱动程序时，都不应该去静态指定设备的从设备号，因为静态指定的从设备号会比较容易发生冲突，而动态分配的从设备号能够保证唯一性。
@@ -227,7 +227,7 @@ static struct file_operations logger_fops = {
 我们就从函数 `logger_init` 开始，分析日志设备的初始化过程。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 static int __init logger_init(void)
 {
 	int ret;
@@ -251,7 +251,7 @@ out:
 日志设备的初始化过程实际上就是将三个日志设备注册到系统中，这是分别通过调用函数 `init_log` 来实现的。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 static int __init init_log(struct logger_log *log)
 {
 	int ret;
@@ -272,7 +272,7 @@ static int __init init_log(struct logger_log *log)
 在 `init_log` 函数中，主要是通过调用 `misc_register` 函数将相应的日志设备注册到系统中。
 
 `kernel/goldfish/drivers/char/misc.c`
-```c
+```cpp
 01 int misc_register(struct miscdevice * misc)
 02 {
 03 	struct miscdevice *c;
@@ -327,7 +327,7 @@ static int __init init_log(struct logger_log *log)
 函数第 `17` 行到第 `27` 行为所要注册的日志设备分配从设备号。系统可分配的 `misc` 从设备号一共有 `64` 个，即从 `0` 到 `63` 。这些从设备号的使用情况记录在数组 `misc_minors` 中，它的定义如下所示。
 
 `kernel/goldfish/drivers/char/misc.c`
-```c
+```cpp
 #define DYNAMIC_MINORS 64 /* like dynamic majors */
 static unsigned char misc_minors[DYNAMIC_MINORS / 8];
 ```
@@ -336,7 +336,7 @@ static unsigned char misc_minors[DYNAMIC_MINORS / 8];
 函数第 `31` 行使用 `misc` 主设备号 `MISC_MAJOR` 和前面得到的从设备号来创建一个设备号对象 `dev` ，接着第 `33` 行以它为参数调用函数 `device_create` 将日志设备 `misc` 注册到系统中。 `MISC_MAJOR` 是一个宏，它的定义如下所示。
 
 `kernel/goldfish/include/linux/major.h`
-```c
+```cpp
 #define MISC_MAJOR		10
 ```
 日志设备注册成功之后，函数第 `44` 行就将它添加到 `misc` 设备列表 `misc_list` 中，表示日志设备注册成功了。
@@ -346,7 +346,7 @@ static unsigned char misc_minors[DYNAMIC_MINORS / 8];
 在前面的 `2.3.4` 小节中提到， `Android` 系统使用一种 `uevent` 机制来管理系统的设备文件。当 `Logger` 日志驱动程序注册一个日志设备时，内核就会发出一个 `uevent` 事件，这个 `uevent` 最终由 `init` 进程中的 `handle_device_event` 函数来处理，它的实现如下所示。
 
 `system/core/init/devices.c`
-```c
+```cpp
 static void handle_device_event(struct uevent *uevent)
 {
     char devpath[96];
@@ -464,7 +464,7 @@ static void handle_device_event(struct uevent *uevent)
 在从 `Logger` 日志驱动程序读取或者写入日志记录之前，首先要调用函数 `open` 来打开对应的日志设备文件。在 `Logger` 日志驱动程序中，日志设备文件的打开函数定义为 `logger_open` ，它的实现如下所示。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 01 /*
 02  * logger_open - the log's open() file operation
 03  *
@@ -510,7 +510,7 @@ static void handle_device_event(struct uevent *uevent)
 函数第 `15` 行调用函数 `get_log_from_minor` 根据从设备号获得要操作的日志缓冲区结构体。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 static struct logger_log * get_log_from_minor(int minor)
 {
 	if (log_main.misc.minor == minor)
@@ -528,7 +528,7 @@ static struct logger_log * get_log_from_minor(int minor)
 当进程调用 `read` 函数从日志设备读取日志记录时， `Logger` 日志驱动程序中的函数 `logger_read` 就会被调用从相应的日志缓冲区中读取日志记录。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 01 /*
 02  * logger_read - our log's read() method
 03  *
@@ -613,7 +613,7 @@ static struct logger_log * get_log_from_minor(int minor)
 第 `51` 行再次确认日志缓冲区结构体 `log` 中有新的日志记录可读之后，接着第 `57` 行就调用函数 `get_entry_len` 来得到下一条要读取的日志记录的长度。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 /*
  * get_entry_len - Grabs the length of the payload of the next entry starting
  * from 'off'.
@@ -643,7 +643,7 @@ static __u32 get_entry_len(struct logger_log *log, size_t off)
 回到 `logger_read` 函数中，第 `64` 行调用函数 `do_read_log_to_user` 执行真正的日志记录读取操作。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 01 /*
 02  * do_read_log_to_user - reads exactly 'count' bytes from 'log' into the
 03  * user-space buffer 'buf'. Returns 'count' on success.
@@ -688,13 +688,13 @@ static __u32 get_entry_len(struct logger_log *log, size_t off)
 当前进程从日志缓冲区结构体 `log` 中读取了一条日志记录之后，就要修改它的成员变量 `r_off` 的值，表示下次要读取的是日志缓冲区结构体 `log` 中的下一条日志记录。第 `31` 行首先将日志读取进程结构体 `reader` 的成员变量 `r_off` 的值加上前面已经读取的日志记录的长度 `count` ，然后再使用宏 `logger_offset` 来对计算结果进行调整。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 /* logger_offset - returns index 'n' into the log via (optimized) modulus */
 #define logger_offset(n)	((n) & (log->size - 1))
 ```
 这是由于日志缓冲区是循环使用的，如果计算得到的下一条日志记录的位置大于日志缓冲区的长度，那么就需要将它绕回到日志缓冲区的前面。
 
-> **注意**
+**注意**
 
 > 日志缓冲区的长度是 `2` 的 `N` 次方，因此，只要它的值减1之后，再与参数 `n` 执行按位与运算，就可以得到参数 `n` 在日志缓冲区中的正确位置。
 
@@ -705,7 +705,7 @@ static __u32 get_entry_len(struct logger_log *log, size_t off)
 当进程调用函数 `write` 、 `writev` 或者 `aio_write` 往日志设备写入日志记录时， `Logger` 日志驱动程序中的函数 `logger_aio_write` 就会被调用来执行日志记录的写入操作。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 01 /*
 02  * logger_aio_write - our write method, implementing support for write(),
 03  * writev(), and aio_write(). Writes are our fast path, and we try to optimize
@@ -778,7 +778,7 @@ static __u32 get_entry_len(struct logger_log *log, size_t off)
 在前面的 `4.2.3` 小节提到，当进程以写模式打开日志设备时， `Logger` 日志驱动程序会把对应的日志缓冲区结构体 `log` 保存在一个打开文件结构体 `file` 的成员变量 `private_data` 中。参数 `iocb` 的成员变量 `ki_filp` 正好指向该打开文件结构体，因此，第 `9` 行就调用函数 `file_get_log` 安全地将对应的日志缓冲区结构体 `log` 获取回来。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 static inline struct logger_log * file_get_log(struct file *file)
 {
 	if (file->f_mode & FMODE_READ) {
@@ -798,34 +798,34 @@ static inline struct logger_log * file_get_log(struct file *file)
 
 `kernel/goldfish/drivers/staging/android/logger.c`
 ```c
-/*
- * fix_up_readers - walk the list of all readers and "fix up" any who were
- * lapped by the writer; also do the same for the default "start head".
- * We do this by "pulling forward" the readers and start head to the first
- * entry after the new write head.
- *
- * The caller needs to hold log->mutex.
- */
-static void fix_up_readers(struct logger_log *log, size_t len)
-{
-	size_t old = log->w_off;
-	size_t new = logger_offset(old + len);
-	struct logger_reader *reader;
-
-	if (clock_interval(old, new, log->head))
-		log->head = get_next_entry(log, log->head, len);
-
-	list_for_each_entry(reader, &log->readers, list)
-		if (clock_interval(old, new, reader->r_off))
-			reader->r_off = get_next_entry(log, reader->r_off, len);
-}
+01 /*
+02  * fix_up_readers - walk the list of all readers and "fix up" any who were
+03  * lapped by the writer; also do the same for the default "start head".
+04  * We do this by "pulling forward" the readers and start head to the first
+05  * entry after the new write head.
+06  *
+07  * The caller needs to hold log->mutex.
+08  */
+09 static void fix_up_readers(struct logger_log *log, size_t len)
+10 {
+11 	size_t old = log->w_off;
+12 	size_t new = logger_offset(old + len);
+13 	struct logger_reader *reader;
+14 
+15 	if (clock_interval(old, new, log->head))
+16 		log->head = get_next_entry(log, log->head, len);
+17 
+18 	list_for_each_entry(reader, &log->readers, list)
+19 		if (clock_interval(old, new, reader->r_off))
+20 			reader->r_off = get_next_entry(log, reader->r_off, len);
+21 }
 ```
 第二个参数 `len` 表示即将要写入的日志记录的总长度，它等于日志记录结构体 `logger_entry` 的长度加上日志记录的有效负载长度。第 `11` 行得到日志缓冲区结构体 `log` 的下一条日志记录的写入位置，保存在变量 `old` 中。第 `12` 行计算将新的日志记录写入到日志缓冲区结构体 `log` 之后，下一条日志记录的写入位置，保存在变量 `new` 中。位于 `old` 值和 `new` 值之间的那些日志记录读取位置是无效的，因为它们即将被新写入的日志记录覆盖。
 
 给定一个日志记录读取位置 `c` ，判断它是否位于 `a` 和 `b` 之间是通过调用函数 `clock_interval` 来实现的，如下所示。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 /*
  * clock_interval - is a < c < b in mod-space? Put another way, does the line
  * from a to b cross c?
@@ -848,7 +848,7 @@ static inline int clock_interval(size_t a, size_t b, size_t c)
 回到函数 `fix_up_readers` 中，第 `16` 行修正的是新的日志读取进程在日志缓冲区结构体 `log` 中的开始读取位置，即日志缓冲区结构体 `log` 的成员变量 `head` 的值。第 `18` 行到第 `20` 行的循环语句修正的是那些正在读取日志缓冲区结构体 `log` 中的日志记录的进程的下一条日志记录的位置，即日志读取进程结构体 `reader` 的成员变量 `r_off` 的值。如果这些位置正好位于变量 `old` 和 `new` 的值之间，那么就调用函数 `get_next_entry` 将它们的值修改为下一条日志记录的位置。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 /*
  * get_next_entry - return the offset of the first valid entry at least 'len'
  * bytes after 'off'.
@@ -875,36 +875,36 @@ static size_t get_next_entry(struct logger_log *log, size_t off, size_t len)
 函数前面已经为即将要写入的日志记录准备好了一个日志记录结构体 `header` ，因此，第 `37` 行就调用函数 `do_write_log` 将它的内容写入到日志缓冲区结构体 `log` 中。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
-/*
- * do_write_log - writes 'len' bytes from 'buf' to 'log'
- *
- * The caller needs to hold log->mutex.
- */
-static void do_write_log(struct logger_log *log, const void *buf, size_t count)
-{
-	size_t len;
-
-	len = min(count, log->size - log->w_off);
-	memcpy(log->buffer + log->w_off, buf, len);
-
-	if (count != len)
-		memcpy(log->buffer, buf + len, count - len);
-
-	log->w_off = logger_offset(log->w_off + count);
-
-}
+```cpp
+01 /*
+02  * do_write_log - writes 'len' bytes from 'buf' to 'log'
+03  *
+04  * The caller needs to hold log->mutex.
+05  */
+06 static void do_write_log(struct logger_log *log, const void *buf, size_t count)
+07 {
+08 	size_t len;
+09 
+10 	len = min(count, log->size - log->w_off);
+11 	memcpy(log->buffer + log->w_off, buf, len);
+12 
+13 	if (count != len)
+14 		memcpy(log->buffer, buf + len, count - len);
+15 
+16 	log->w_off = logger_offset(log->w_off + count);
+17 
+18 }
 ```
 由于一个日志记录结构体的内容可能会被分别写在日志缓冲区的尾部和头部，因此，函数 `do_write_log` 就分两次来写入它的内容。第 `10` 行计算写入到日志缓冲区尾部的内容的长度，接着第 `11` 行就直接将对应的日志记录结构体的内容拷贝到日志缓冲区中。第 `13` 行判断前面是否已经将日志记录结构体的内容全部写入到日志缓冲区中了。如果不是，第 `14` 行就会将剩余的内容写入到日志缓冲区的头部。
 
-> **注意**
+**注意**
 
 > 参数 `buf` 指向的内容即为要写入的日志记录结构体的内容，它位于内核空间中，因此，第 `11` 行和第 `14` 行将它的内容写入到日志缓冲区中时，直接调用函数 `memcpy` 来拷贝就可以了。将日志记录结构体的内容写入到日志缓冲区中之后，第 `16` 行就要更新它的成员变量 `w_off` 的值，因为它始终指向下一条日志记录的写入位置。
 
 回到函数 `logger_aio_write` 中，第 `39` 行到第 `56` 行的 `while` 循环把参数 `iov` 的内容写入到日志缓冲区结构体 `log` 中。参数 `iov` 里面所保存的内容对应于要写入的日志记录的有效负载，它们是从用户空间传进来的，因此，函数 `logger_aio_write` 不能直接调用函数 `memcpy` 将它们拷贝到日志缓冲区结构体 `log` 中，而是调用函数 `do_write_log_from_user` 来执行拷贝操作。
 
 `kernel/goldfish/drivers/staging/android/logger.c`
-```c
+```cpp
 /*
  * do_write_log_user - writes 'len' bytes from the user-space buffer 'buf' to
  * the log 'log'
@@ -933,7 +933,7 @@ static ssize_t do_write_log_from_user(struct logger_log *log,
 ```
 与日志记录结构体的写入过程类似，日志记录的有效负载也有可能会被分别写入到日志缓冲区的尾部和头部，因此，函数 `do_write_log_from_user` 就分两次来写入它的内容。第 `14` 行计算写入到日志缓冲区尾部的内容的长度，接着第 `15` 行就调用函数 `copy_from_user` 将对应的日志记录的有效负载拷贝到日志缓冲区中。第 `18` 行判断前面是否已经将日志记录的有效负载全部写入到日志缓冲区了。如果不是，第 `19` 行就会将剩余的内容写入到日志缓冲区的头部。
 
-> **注意**
+**注意**
 
 > 参数 `buf` 指向的内容是保存在用户空间中的，因此，第 `15` 行和第 `19` 行将它的内容写入到日志缓冲区中时，需要调用函数 `copy_from_user` 来执行拷贝操作。将日志记录的有效负载写入到日志缓冲区中之后，接下来第 `22` 行就要更新它的成员变量 `w_off` 的值，因为它始终指向下一条日志记录的写入位置。
 
@@ -961,14 +961,14 @@ static ssize_t do_write_log_from_user(struct logger_log *log,
 在本节接下来的内容中，我们就分别描述日志库 `liblog` 提供的日志记录写入函数的实现。
 
 `system/core/liblog/logd_write.c`
-```c
+```cpp
 static int __write_to_log_init(log_id_t, struct iovec *vec, size_t nr);
 static int (*write_to_log)(log_id_t, struct iovec *vec, size_t nr) = __write_to_log_init;
 ```
 函数指针 `write_to_log` 在开始的时候被设置为函数 `＿write_to_log_init` 。当它第一次被调用时，便会执行函数 `＿write_to_log_init` 来初始化日志库 `liblog` ，如下所示。
 
 `system/core/liblog/logd_write.c`
-```c
+```cpp
 static int log_fds[(int)LOG_ID_MAX] = { -1, -1, -1, -1 };
 
 static int __write_to_log_init(log_id_t log_id, struct iovec *vec, size_t nr)
@@ -1013,7 +1013,7 @@ static int __write_to_log_init(log_id_t log_id, struct iovec *vec, size_t nr)
  `LOG_ID_MAIN` 、 `LOG_ID_RADIO` 、 `LOG_ID_EVENTS` 、 `LOG_ID_SYSTEM` 和 `LOG_ID_MAX` 是五个枚举值，它们的定义如下所示。
 
 `system/core/include/cutils/log.h`
-```c
+```cpp
 typedef enum {
     LOG_ID_MAIN = 0,
     LOG_ID_RADIO = 1,
@@ -1026,7 +1026,7 @@ typedef enum {
  `LOGGER_LOG_MAIN` 、 `LOGGER_LOG_RADIO` 、 `LOGGER_LOG_EVENTS` 和 `LOGGER_LOG_SYSTEM` 是四个宏，它们的定义如下所示。
 
 `system/core/include/cutils/logger.h`
-```c
+```cpp
 #define LOGGER_LOG_MAIN		"log/main"
 #define LOGGER_LOG_RADIO	"log/radio"
 #define LOGGER_LOG_EVENTS	"log/events"
@@ -1035,7 +1035,7 @@ typedef enum {
 因此，函数 `＿write_to_log_init` 的第8行到第11行实际上是调用宏 `log_open` 来打开 `/dev/log/main` 、 `/dev/log/radio` 、 `/dev/log/main` 和 `/dev/log/system` 四个日志设备文件。宏 `log_open` 的定义如下所示。
 
 `system/core/liblog/logd_write.c`
-```c
+```cpp
 #if FAKE_LOG_DEVICE
 // This will be defined when building for the host.
 #define log_open(pathname, flags) fakeLogOpen(pathname, flags)
@@ -1053,7 +1053,7 @@ typedef enum {
 
 **__write_to_log_kernel**
 `system/core/liblog/logd_write.c`
-```c
+```cpp
 
 static int __write_to_log_kernel(log_id_t log_id, struct iovec *vec, size_t nr)
 {
@@ -1075,13 +1075,13 @@ static int __write_to_log_kernel(log_id_t log_id, struct iovec *vec, size_t nr)
 ```
 函数 `__write_to_log_kernel` 根据参数 `log_id` 在全局数组 `log_fds` 中找到对应的日志设备文件描述符，然后调用宏 `log_writev` ，即函数 `writev` ，把日志记录写入到 `Logger` 日志驱动程序中。
 
-> **注意**
+**注意**
 
 > 如果调用宏 `log_writev` 写入日志记录时， `Logger` 日志驱动程序的返回值小于 `0` ，并且错误码等于 `EINTR` ，那么就需要重新执行写入日志记录的操作。这种情况一般出现在当前进程等待写入日志记录的过程中，刚好碰到有新的信号需要处理，这时候内核就会返回一个 `EINTR` 错误码给调用者，表示需要调用者再次执行相同的操作。
 
 **__write_to_log_null**
 `system/core/liblog/logd_write.c`
-```c
+```cpp
 static int __write_to_log_null(log_id_t log_fd, struct iovec *vec, size_t nr)
 {
     return -1;
@@ -1091,45 +1091,45 @@ static int __write_to_log_null(log_id_t log_fd, struct iovec *vec, size_t nr)
 
 **__android_log_write**
 `system/core/liblog/logd_write.c`
-```c
-int __android_log_write(int prio, const char *tag, const char *msg)
-{
-    struct iovec vec[3];
-    log_id_t log_id = LOG_ID_MAIN;
-
-    if (!tag)
-        tag = "";
-
-    /* XXX: This needs to go! */
-    if (!strcmp(tag, "HTC_RIL") ||
-        !strncmp(tag, "RIL", 3) || /* Any log tag with "RIL" as the prefix */
-        !strcmp(tag, "AT") ||
-        !strcmp(tag, "GSM") ||
-        !strcmp(tag, "STK") ||
-        !strcmp(tag, "CDMA") ||
-        !strcmp(tag, "PHONE") ||
-        !strcmp(tag, "SMS"))
-            log_id = LOG_ID_RADIO;
-
-    vec[0].iov_base   = (unsigned char *) &prio;
-    vec[0].iov_len    = 1;
-    vec[1].iov_base   = (void *) tag;
-    vec[1].iov_len    = strlen(tag) + 1;
-    vec[2].iov_base   = (void *) msg;
-    vec[2].iov_len    = strlen(msg) + 1;
-
-    return write_to_log(log_id, vec, 3);
-}
+```cpp
+01 int __android_log_write(int prio, const char *tag, const char *msg)
+02 {
+03     struct iovec vec[3];
+04     log_id_t log_id = LOG_ID_MAIN;
+05 
+06     if (!tag)
+07         tag = "";
+08 
+09     /* XXX: This needs to go! */
+10     if (!strcmp(tag, "HTC_RIL") ||
+11         !strncmp(tag, "RIL", 3) || /* Any log tag with "RIL" as the prefix */
+12         !strcmp(tag, "AT") ||
+13         !strcmp(tag, "GSM") ||
+14         !strcmp(tag, "STK") ||
+15         !strcmp(tag, "CDMA") ||
+16         !strcmp(tag, "PHONE") ||
+17         !strcmp(tag, "SMS"))
+18             log_id = LOG_ID_RADIO;
+19 
+20     vec[0].iov_base   = (unsigned char *) &prio;
+21     vec[0].iov_len    = 1;
+22     vec[1].iov_base   = (void *) tag;
+23     vec[1].iov_len    = strlen(tag) + 1;
+24     vec[2].iov_base   = (void *) msg;
+25     vec[2].iov_len    = strlen(msg) + 1;
+26 
+27     return write_to_log(log_id, vec, 3);
+28 }
 ```
 在默认情况下，函数 `__android_log_write` 写入的日志记录的类型为 `main` 。然而，如果传进来的日志记录的标签以 `RIL` 开头或者等于 `HTC_RIL` 、 `AT` 、 `GSM` 、 `STK` 、 `CDMA` 、 `PHONE` 或 `SMS` ，那么它就会被认为是类型为 `radio` 的日志记录。
 
-> 注意
+**注意**
 
 > 第 `20` 行到第 `25` 行首先将日志记录的优先级、标签和内容保存在数组元素 `vec[0]` 、 `vec[1]` 和 `vec[2]` 中，然后再将它们写入到 `Logger` 日志驱动程序中。日志记录的标签和内容的类型均为字符串，它们后面紧跟着的字符串结束字符 `\0` 也被写入到 `Logger` 日志驱动程序中。这样做的好处是，可以通过字符串结束字符 `\0` 来解析日志记录的标签字段和内容字段。
 
 **__android_log_buf_write**
 `system/core/liblog/logd_write.c`
-```c
+```cpp
 int __android_log_buf_write(int bufID, int prio, const char *tag, const char *msg)
 {
     struct iovec vec[3];
@@ -1164,7 +1164,7 @@ int __android_log_buf_write(int bufID, int prio, const char *tag, const char *ms
 
 **＿android_log_vprint 、＿android_log_print、＿android_log_assert**
 `system/core/liblog/logd_write.c`
-```c
+```cpp
 int __android_log_vprint(int prio, const char *tag, const char *fmt, va_list ap)
 {
     char buf[LOG_BUF_SIZE];    
@@ -1206,7 +1206,7 @@ void __android_log_assert(const char *cond, const char *tag,
 
 **＿android_log_buf_print**
 `system/core/liblog/logd_write.c`
-```c
+```cpp
 int __android_log_buf_print(int bufID, int prio, const char *tag, const char *fmt, ...)
 {
     va_list ap;
@@ -1223,7 +1223,7 @@ int __android_log_buf_print(int bufID, int prio, const char *tag, const char *fm
 
 **＿android_log_bwrite、＿android_log_btwrite**
 `system/core/liblog/logd_write.c`
-```c
+```cpp
 int __android_log_bwrite(int32_t tag, const void *payload, size_t len)
 {
     struct iovec vec[2];
@@ -1271,7 +1271,7 @@ int __android_log_btwrite(int32_t tag, char type, const void *payload,
 这个头文件定义了一个宏 `LOG_NDEBUG` ，用来区分程序是调试版本还是发布版本，如下所示。
 
 `system/core/include/cutils/log.h`
-```c
+```cpp
 /*
  * Normally we strip LOGV (VERBOSE messages) from release builds.
  * You can modify this (for example with "#define LOG_NDEBUG 0"
@@ -1290,7 +1290,7 @@ int __android_log_btwrite(int32_t tag, char type, const void *payload,
 这个头文件还定义了宏 `LOG_TAG` ，用作当前编译单元的默认日志记录标签，它的定义如下所示。
 
 `system/core/include/cutils/log.h`
-```c
+```cpp
 /*
  * This is the local tag used for the following simplified
  * logging macros.  You can change this preprocessor definition
@@ -1305,7 +1305,7 @@ int __android_log_btwrite(int32_t tag, char type, const void *payload,
 了解了这两个宏的定义之后，我们就开始分析这三组 `C/C++` 日志宏的实现。
 
 `system/core/include/cutils/log.h`
-```c
+```cpp
 /*
  * Simplified macro to send a verbose log message using the current LOG_TAG.
  */
@@ -1350,7 +1350,7 @@ int __android_log_btwrite(int32_t tag, char type, const void *payload,
 这五个宏是通过使用宏 `LOG` 来实现日志写入功能的，它的定义如下所示。
 
 `system/core/include/cutils/log.h`
-```c
+```cpp
 /*
  * Basic log message macro.
  *
@@ -1378,7 +1378,7 @@ int __android_log_btwrite(int32_t tag, char type, const void *payload,
 当宏 `LOG` 展开后，它的第一个参数 `priority` 加上前缀 `ANDROID_` 之后，就变成了另外一个宏 `LOG_PRI` 的第一个参数。例如，宏 `LOGV` 展开后就得到宏 `LOG_PRI` 的第一个参数为 `ANDROID_LOG_VERBOSE` 。这些形式为 `ANDROID_##priority` 的参数都是类型为 `android_LogPriority` 的枚举值，它们的定义如下所示。
 
 `system/core/include/android/log.h`
-```c
+```cpp
 /*
  * Android log priority values, in ascending priority order.
  */
@@ -1397,7 +1397,7 @@ typedef enum android_LogPriority {
 回到宏 `LOG_PRI` 的定义中，它最终是通过调用日志库 `liblog` 提供的函数 `＿android_log_print` 向 `Logger` 日志驱动程序中写入日志记录的。函数 `＿android_log_print` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
 
 `system/core/include/cutils/log.h`
-```c
+```cpp
 /*
  * Simplified macro to send a verbose system log message using the current LOG_TAG.
  */
@@ -1446,7 +1446,7 @@ typedef enum android_LogPriority {
 宏 `LOG_EVENT_INT` 和 `LOG_EVENT_LONG` 写入的日志记录的内容分别是一个整数和一个长整数。它们展开之后，实际上是通过调用日志库 `liblog` 提供的函数 `＿android_log_btwrite` 来往 `Logger` 日志驱动程序中写入日志记录的。函数 `＿android_log_btwrite` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
 
 `system/core/include/cutils/log.h`
-```c
+```cpp
 /*
  * Event log entry types.  These must match up with the declarations in
  * java/android/android/util/EventLog.java.
@@ -1592,7 +1592,39 @@ static jint android_util_Log_println_native(JNIEnv* env, jobject clazz,
 ```
 在 `JNI` 函数 `android_util_Log_println_native` 中，第 `11` 行到 `19` 行代码检查写入的日志记录的内容 `msgObj` 是否为 `null` ，接着第 `21` 行到 `29` 行代码检查写入的日志记录的类型值是否位于 `0` 和 `LOG_ID_MAX` 之间，其中， `0` 、 `1` 、 `2` 和 `3` 四个值表示的日志记录的类型分别为 `main` 、 `radio` 、 `events` 和 `system` 。通过这两个合法性检查之后，最后第 `35` 行就调用日志库 `liblog` 提供的函数 `＿android_log_buf_write` 来往 `Logger` 日志驱动程序中写入日志记录。函数 `＿android_log_buf_write` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
 
-> **注意**
+**android.util.Slog**
+
+```java
+/**
+ * @hide
+ */
+public final class Slog {
+    ......
+    public static int v(String tag, String msg) {
+        return Log.println_native(Log.LOG_ID_SYSTEM, Log.VERBOSE, tag, msg);
+    }
+
+    public static int d(String tag, String msg) {
+        return Log.println_native(Log.LOG_ID_SYSTEM, Log.DEBUG, tag, msg);
+    }
+
+    public static int i(String tag, String msg) {
+        return Log.println_native(Log.LOG_ID_SYSTEM, Log.INFO, tag, msg);
+    }
+
+    public static int w(String tag, String msg) {
+        return Log.println_native(Log.LOG_ID_SYSTEM, Log.WARN, tag, msg);
+    }
+
+    public static int e(String tag, String msg) {
+        return Log.println_native(Log.LOG_ID_SYSTEM, Log.ERROR, tag, msg);
+    }
+    ......
+}
+
+```
+
+**注意**
 
 > 在接口 `android.util.Slog` 定义前面的注释中有一个 `@hide` 关键字，表示这是一个隐藏接口，只在系统内部使用，应用程序一般不应该使用该接口来写入日志记录。
 
@@ -1665,7 +1697,7 @@ static jint android_util_EventLog_writeEvent_Long(JNIEnv* env, jobject clazz,
 ```
 它们都是通过调用宏 `android_btWriteLog` 向 `Logger` 日志驱动程序中写入日志记录的。前者在调用宏 `android_btWriteLog` 时，指定第二个参数为 `EVENT_TYPE_INT` ，表示要写入的日志记录的内容为一个整数，它的内存布局如图4-8所示。后者在调用宏 `android_btWriteLog` 时，指定第二个参数为 `EVENT_TYPE_LONG` ，表示要写入的日志记录的内容为一个长整数，它的内存布局如图 `4-9` 所示。
 
-![](2020-11-16-20-46-20.png)
+![](pic/2020-11-16-20-46-20.png)
 
 宏 `android_btWriteLog` 的定义如下所示。
 
@@ -1680,43 +1712,33 @@ static jint android_util_EventLog_writeEvent_Long(JNIEnv* env, jobject clazz,
 
 `frameworks/base/core/jni/android_util_EventLog.cpp`
 ```cpp
-int register_android_util_EventLog(JNIEnv* env) {
-    for (int i = 0; i < NELEM(gClasses); ++i) {
-        jclass clazz = env->FindClass(gClasses[i].name);
-        if (clazz == NULL) {
-            LOGE("Can't find class: %s\n", gClasses[i].name);
-            return -1;
-        }
-        *gClasses[i].clazz = (jclass) env->NewGlobalRef(clazz);
-    }
-
-    for (int i = 0; i < NELEM(gFields); ++i) {
-        *gFields[i].id = env->GetFieldID(
-                *gFields[i].c, gFields[i].name, gFields[i].ft);
-        if (*gFields[i].id == NULL) {
-            LOGE("Can't find field: %s\n", gFields[i].name);
-            return -1;
-        }
-    }
-
-    for (int i = 0; i < NELEM(gMethods); ++i) {
-        *gMethods[i].id = env->GetMethodID(
-                *gMethods[i].c, gMethods[i].name, gMethods[i].mt);
-        if (*gMethods[i].id == NULL) {
-            LOGE("Can't find method: %s\n", gMethods[i].name);
-            return -1;
-        }
-    }
-
-    return AndroidRuntime::registerNativeMethods(
-            env,
-            "android/util/EventLog",
-            gRegisterMethods, NELEM(gRegisterMethods));
-}
+01 /*
+02  * In class android.util.EventLog:
+03  *  static native int writeEvent(int tag, String value)
+04  */
+05 static jint android_util_EventLog_writeEvent_String(JNIEnv* env, jobject clazz,
+06                                                     jint tag, jstring value) {
+07     uint8_t buf[MAX_EVENT_PAYLOAD];
+08 
+09     // Don't throw NPE -- I feel like it's sort of mean for a logging function
+10     // to be all crashy if you pass in NULL -- but make the NULL value explicit.
+11     const char *str = value != NULL ? env->GetStringUTFChars(value, NULL) : "NULL";
+12     jint len = strlen(str);
+13     const int max = sizeof(buf) - sizeof(len) - 2;  // Type byte, final newline
+14     if (len > max) len = max;
+15 
+16     buf[0] = EVENT_TYPE_STRING;
+17     memcpy(&buf[1], &len, sizeof(len));
+18     memcpy(&buf[1 + sizeof(len)], str, len);
+19     buf[1 + sizeof(len) + len] = '\n';
+20 
+21     if (value != NULL) env->ReleaseStringUTFChars(value, str);
+22     return android_bWriteLog(tag, buf, 2 + sizeof(len) + len);
+23 }
 ```
 内容为字符串的日志记录的内存布局如图 `4-10` 所示。
 
-![](2020-11-16-20-50-12.png)
+![](pic/2020-11-16-20-50-12.png)
 
 第一个字段记录日志记录内容的类型为字符串，第二个字段描述该字符串的长度，第三个字段保存的是字符串内容，第四个字段使用特殊字符 `\n` 来结束该日志记录。结合这个内存布局图，就不难理解函数 `android_util_EventLog_writeEvent_String` 的实现了。
 
@@ -1733,65 +1755,65 @@ int register_android_util_EventLog(JNIEnv* env) {
 
 `frameworks/base/core/jni/android_util_EventLog.cpp`
 ```cpp
-/*
- * In class android.util.EventLog:
- *  static native int writeEvent(long tag, Object... value)
- */
-static jint android_util_EventLog_writeEvent_Array(JNIEnv* env, jobject clazz,
-                                                   jint tag, jobjectArray value) {
-    if (value == NULL) {
-        return android_util_EventLog_writeEvent_String(env, clazz, tag, NULL);
-    }
-
-    uint8_t buf[MAX_EVENT_PAYLOAD];
-    const size_t max = sizeof(buf) - 1;  // leave room for final newline
-    size_t pos = 2;  // Save room for type tag & array count
-
-    jsize copied = 0, num = env->GetArrayLength(value);
-    for (; copied < num && copied < 255; ++copied) {
-        jobject item = env->GetObjectArrayElement(value, copied);
-        if (item == NULL || env->IsInstanceOf(item, gStringClass)) {
-            if (pos + 1 + sizeof(jint) > max) break;
-            const char *str = item != NULL ? env->GetStringUTFChars((jstring) item, NULL) : "NULL";
-            jint len = strlen(str);
-            if (pos + 1 + sizeof(len) + len > max) len = max - pos - 1 - sizeof(len);
-            buf[pos++] = EVENT_TYPE_STRING;
-            memcpy(&buf[pos], &len, sizeof(len));
-            memcpy(&buf[pos + sizeof(len)], str, len);
-            pos += sizeof(len) + len;
-            if (item != NULL) env->ReleaseStringUTFChars((jstring) item, str);
-        } else if (env->IsInstanceOf(item, gIntegerClass)) {
-            jint intVal = env->GetIntField(item, gIntegerValueID);
-            if (pos + 1 + sizeof(intVal) > max) break;
-            buf[pos++] = EVENT_TYPE_INT;
-            memcpy(&buf[pos], &intVal, sizeof(intVal));
-            pos += sizeof(intVal);
-        } else if (env->IsInstanceOf(item, gLongClass)) {
-            jlong longVal = env->GetLongField(item, gLongValueID);
-            if (pos + 1 + sizeof(longVal) > max) break;
-            buf[pos++] = EVENT_TYPE_LONG;
-            memcpy(&buf[pos], &longVal, sizeof(longVal));
-            pos += sizeof(longVal);
-        } else {
-            jniThrowException(env,
-                    "java/lang/IllegalArgumentException",
-                    "Invalid payload item type");
-            return -1;
-        }
-        env->DeleteLocalRef(item);
-    }
-
-    buf[0] = EVENT_TYPE_LIST;
-    buf[1] = copied;
-    buf[pos++] = '\n';
-    return android_bWriteLog(tag, buf, pos);
-}
+01 /*
+02  * In class android.util.EventLog:
+03  *  static native int writeEvent(long tag, Object... value)
+04  */
+05 static jint android_util_EventLog_writeEvent_Array(JNIEnv* env, jobject clazz,
+06                                                    jint tag, jobjectArray value) {
+07     if (value == NULL) {
+08         return android_util_EventLog_writeEvent_String(env, clazz, tag, NULL);
+09     }
+10 
+11     uint8_t buf[MAX_EVENT_PAYLOAD];
+12     const size_t max = sizeof(buf) - 1;  // leave room for final newline
+13     size_t pos = 2;  // Save room for type tag & array count
+14 
+15     jsize copied = 0, num = env->GetArrayLength(value);
+16     for (; copied < num && copied < 255; ++copied) {
+17         jobject item = env->GetObjectArrayElement(value, copied);
+18         if (item == NULL || env->IsInstanceOf(item, gStringClass)) {
+19             if (pos + 1 + sizeof(jint) > max) break;
+20             const char *str = item != NULL ? env->GetStringUTFChars((jstring) item, NULL) : "NULL";
+21             jint len = strlen(str);
+22             if (pos + 1 + sizeof(len) + len > max) len = max - pos - 1 - sizeof(len);
+23             buf[pos++] = EVENT_TYPE_STRING;
+24             memcpy(&buf[pos], &len, sizeof(len));
+25             memcpy(&buf[pos + sizeof(len)], str, len);
+26             pos += sizeof(len) + len;
+27             if (item != NULL) env->ReleaseStringUTFChars((jstring) item, str);
+28         } else if (env->IsInstanceOf(item, gIntegerClass)) {
+29             jint intVal = env->GetIntField(item, gIntegerValueID);
+30             if (pos + 1 + sizeof(intVal) > max) break;
+31             buf[pos++] = EVENT_TYPE_INT;
+32             memcpy(&buf[pos], &intVal, sizeof(intVal));
+33             pos += sizeof(intVal);
+34         } else if (env->IsInstanceOf(item, gLongClass)) {
+35             jlong longVal = env->GetLongField(item, gLongValueID);
+36             if (pos + 1 + sizeof(longVal) > max) break;
+37             buf[pos++] = EVENT_TYPE_LONG;
+38             memcpy(&buf[pos], &longVal, sizeof(longVal));
+39             pos += sizeof(longVal);
+40         } else {
+41             jniThrowException(env,
+42                     "java/lang/IllegalArgumentException",
+43                     "Invalid payload item type");
+44             return -1;
+45         }
+46         env->DeleteLocalRef(item);
+47     }
+48 
+49     buf[0] = EVENT_TYPE_LIST;
+50     buf[1] = copied;
+51     buf[pos++] = '\n';
+52     return android_bWriteLog(tag, buf, pos);
+53 }
 ```
 位于列表中的元素的值类型只能为整数、长整数或者字符串；否则，函数就会在第 `41` 行到第 `43` 行抛出一个异常。一个列表中最多可以包含 `255` 个元素，如果超过这个数值，多余的元素就会被忽略。在函数第 `16` 行到第 `47` 行的 `for` 循环中，依次取出列表中的元素，并且根据它们的值类型来组织缓冲区buf的内存布局。如果值类型为整数，那么写入到缓冲区 `buf` 的第一个字节设置为一个 `EVENT_TYPE_INT` 值，再加上一个整数值；如果值类型为长整数，那么写入到缓冲区buf的内容就为一个 `EVENT_TYPE_LONG` 值，再加上一个长整数值；如果值类型为字符串，那么写入到缓冲区buf的内容就为一个 `EVENT_TYPE_STRING` 值和一个字符串长度值，再加上字符串的内容。
 
 将列表中的元素都写入到缓冲区 `buf` 之后，函数第 `49` 行将缓冲区 `buf` 的第一个字节设置为 `EVENT_TYPE_LIST` ，表示这是一个列表类型的日志记录；接着第 `50` 行将缓冲区 `buf` 的第二个字节设置为变量 `copied` 的值，表示在缓冲区 `buf` 中的列表元素个数；最后第 `51` 行将缓冲区 `buf` 的最后一个字节的内容设置为特殊字符 `\n` ，用作该日志记录的结束标志。这时候，缓冲区 `buf` 的内存布局就类似于图 `4-11` 。
 
-![](2020-11-16-20-53-07.png)
+![](pic/2020-11-16-20-53-07.png)
 
 函数第 `52` 行使用了宏 `android_bWriteLog` 将日志记录写入到 `Logger` 日志驱动程序中。前面提到，宏 `android_bWriteLog` 指向的是日志库 `liblog` 提供的函数 `＿android_log_bwrite` ，它的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
 
