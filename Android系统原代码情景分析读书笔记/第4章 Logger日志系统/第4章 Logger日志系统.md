@@ -1,20 +1,31 @@
 
 <!-- TOC -->
 
-- [第4章  `Logger` 日志系统](#第4章--logger-日志系统)
-    - [4.1　 `Logger` 日志格式](#41　-logger-日志格式)
-    - [4.2  `Logger` 日志驱动程序](#42--logger-日志驱动程序)
-        - [4.2.1 基础数据结构](#421-基础数据结构)
+- [第4章  Logger 日志系统](#%E7%AC%AC4%E7%AB%A0--logger-%E6%97%A5%E5%BF%97%E7%B3%BB%E7%BB%9F)
+    - [Logger 日志格式](#logger-%E6%97%A5%E5%BF%97%E6%A0%BC%E5%BC%8F)
+    - [Logger 日志驱动程序](#logger-%E6%97%A5%E5%BF%97%E9%A9%B1%E5%8A%A8%E7%A8%8B%E5%BA%8F)
+        - [基础数据结构](#%E5%9F%BA%E7%A1%80%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84)
             - [struct logger_entry](#struct-logger_entry)
             - [struct logger_log](#struct-logger_log)
             - [struct logger_reader](#struct-logger_reader)
-        - [4.2.2　日志设备的初始化过程](#422　日志设备的初始化过程)
-        - [4.2.3　日志设备文件的打开过程](#423　日志设备文件的打开过程)
-        - [4.2.4　日志记录的读取过程](#424　日志记录的读取过程)
-        - [4.2.5　日志记录的写入过程](#425　日志记录的写入过程)
-    - [4.3　运行时库层日志库](#43　运行时库层日志库)
-    - [4.4　C/C++日志写入接口](#44　cc日志写入接口)
-    - [4.5　Java日志写入接口](#45　java日志写入接口)
+        - [日志设备的初始化过程](#%E6%97%A5%E5%BF%97%E8%AE%BE%E5%A4%87%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96%E8%BF%87%E7%A8%8B)
+        - [日志设备文件的打开过程](#%E6%97%A5%E5%BF%97%E8%AE%BE%E5%A4%87%E6%96%87%E4%BB%B6%E7%9A%84%E6%89%93%E5%BC%80%E8%BF%87%E7%A8%8B)
+        - [日志记录的读取过程](#%E6%97%A5%E5%BF%97%E8%AE%B0%E5%BD%95%E7%9A%84%E8%AF%BB%E5%8F%96%E8%BF%87%E7%A8%8B)
+        - [日志记录的写入过程](#%E6%97%A5%E5%BF%97%E8%AE%B0%E5%BD%95%E7%9A%84%E5%86%99%E5%85%A5%E8%BF%87%E7%A8%8B)
+    - [运行时库层日志库](#%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%93%E5%B1%82%E6%97%A5%E5%BF%97%E5%BA%93)
+        - [__write_to_log_init](#__write_to_log_init)
+        - [__write_to_log_kernel](#__write_to_log_kernel)
+        - [__write_to_log_null](#__write_to_log_null)
+        - [__android_log_write](#__android_log_write)
+        - [__android_log_buf_write](#__android_log_buf_write)
+        - [__android_log_vprint 、__android_log_print 、 __android_log_assert](#__android_log_vprint-__android_log_print--__android_log_assert)
+        - [__android_log_buf_print](#__android_log_buf_print)
+        - [__android_log_bwrite 、 __android_log_btwrite](#__android_log_bwrite--__android_log_btwrite)
+    - [C/C++日志写入接口](#cc%E6%97%A5%E5%BF%97%E5%86%99%E5%85%A5%E6%8E%A5%E5%8F%A3)
+        - [LOGV 、 LOGD 、 LOGI 、 LOGW 和 LOGE](#logv--logd--logi--logw-%E5%92%8C-loge)
+        - [SLOGV 、 SLOGD 、 SLOGI 、 SLOGW 和 SLOGE](#slogv--slogd--slogi--slogw-%E5%92%8C-sloge)
+        - [EVENT_TYPE_INT 、 EVENT_TYPE_LONG 和 EVENT_TYPE_STRING](#event_type_int--event_type_long-%E5%92%8C-event_type_string)
+    - [Java日志写入接口](#java%E6%97%A5%E5%BF%97%E5%86%99%E5%85%A5%E6%8E%A5%E5%8F%A3)
 
 <!-- /TOC -->
 
@@ -696,7 +707,7 @@ static __u32 get_entry_len(struct logger_log *log, size_t off)
 
 **注意**
 
-> 日志缓冲区的长度是 `2` 的 `N` 次方，因此，只要它的值减1之后，再与参数 `n` 执行按位与运算，就可以得到参数 `n` 在日志缓冲区中的正确位置。
+> 日志缓冲区的长度是 `2` 的 `N` 次方，因此，只要它的值减 `1` 之后，再与参数 `n` 执行按位与运算，就可以得到参数 `n` 在日志缓冲区中的正确位置。`2` 的 `N` 次方实际可以看作是 `1` 左移 `N` 位, 例如 `1` 左移 `6` 位后值为 `00100000` 即 `2` 的 `6` 次方，然后减 `1` 后的值为 `000fffff` ，最后与参数 `n` 按位与运算，其结果均在 `00100000` 范围内。
 
 至此，日志记录的读取过程就介绍完了。接下来，我们继续分析日志记录的写入过程。
 
@@ -954,9 +965,9 @@ static ssize_t do_write_log_from_user(struct logger_log *log,
 
 ![图4-7 liblog日志库的函数调用关系](pic/2020-11-16-13-30-58.png)
 
-根据写入的日志记录的类型不同，这些函数可以划分为三个类别。其中，函数 `__android_log_assert` 、 `＿android_log_vprint` 和 `＿android_log_print` 用来写入类型为 `main` 的日志记录；函数 `＿android_log_btwrite` 和 `＿android_log_bwrite` 用来写入类型为 `events` 的日志记录；函数 `＿android_log_buf_print` 可以写入任意一种类型的日志记录。特别地，在函数 `＿android_log_write` 和 `＿android_log_buf_write` 中，如果要写入的日志记录的标签以 `RIL` 开头或者等于 `HTC_RIL` 、 `AT` 、 `GSM` 、 `STK` 、 `CDMA` 、 `PHONE` 或 `SMS` ，那么它们就会被认为是 `radio` 类型的日志记录。
+根据写入的日志记录的类型不同，这些函数可以划分为三个类别。其中，函数 `__android_log_assert` 、 `__android_log_vprint` 和 `__android_log_print` 用来写入类型为 `main` 的日志记录；函数 `__android_log_btwrite` 和 `__android_log_bwrite` 用来写入类型为 `events` 的日志记录；函数 `__android_log_buf_print` 可以写入任意一种类型的日志记录。特别地，在函数 `__android_log_write` 和 `__android_log_buf_write` 中，如果要写入的日志记录的标签以 `RIL` 开头或者等于 `HTC_RIL` 、 `AT` 、 `GSM` 、 `STK` 、 `CDMA` 、 `PHONE` 或 `SMS` ，那么它们就会被认为是 `radio` 类型的日志记录。
 
-无论写入的是什么类型的日志记录，它们最终都是通过调用函数 `write_to_log` 写入到 `Logger` 日志驱动程序中的。 `write_to_log` 是一个函数指针，它开始时指向函数 `＿write_to_log_init` 。因此，当函数 `write_to_log` 第一次被调用时，实际上执行的是函数 `＿write_to_log_init` 。函数 `＿write_to_log_init` 执行的是一些日志库的初始化操作，接着将函数指针 `write_to_log` 重定向到函数 `＿write_to_log_kernel` 或者 `＿write_to_log_null` 中，这取决于是否成功地将日志设备文件打开。
+无论写入的是什么类型的日志记录，它们最终都是通过调用函数 `write_to_log` 写入到 `Logger` 日志驱动程序中的。 `write_to_log` 是一个函数指针，它开始时指向函数 `__write_to_log_init` 。因此，当函数 `write_to_log` 第一次被调用时，实际上执行的是函数 `__write_to_log_init` 。函数 `__write_to_log_init` 执行的是一些日志库的初始化操作，接着将函数指针 `write_to_log` 重定向到函数 `__write_to_log_kernel` 或者 `__write_to_log_null` 中，这取决于是否成功地将日志设备文件打开。
 
 在本节接下来的内容中，我们就分别描述日志库 `liblog` 提供的日志记录写入函数的实现。
 
@@ -965,8 +976,9 @@ static ssize_t do_write_log_from_user(struct logger_log *log,
 static int __write_to_log_init(log_id_t, struct iovec *vec, size_t nr);
 static int (*write_to_log)(log_id_t, struct iovec *vec, size_t nr) = __write_to_log_init;
 ```
-函数指针 `write_to_log` 在开始的时候被设置为函数 `＿write_to_log_init` 。当它第一次被调用时，便会执行函数 `＿write_to_log_init` 来初始化日志库 `liblog` ，如下所示。
+函数指针 `write_to_log` 在开始的时候被设置为函数 `__write_to_log_init` 。当它第一次被调用时，便会执行函数 `__write_to_log_init` 来初始化日志库 `liblog` ，如下所示。
 
+### __write_to_log_init
 `system/core/liblog/logd_write.c`
 ```cpp
 static int log_fds[(int)LOG_ID_MAX] = { -1, -1, -1, -1 };
@@ -1008,7 +1020,7 @@ static int __write_to_log_init(log_id_t log_id, struct iovec *vec, size_t nr)
     return write_to_log(log_id, vec, nr);
 }
 ```
-在函数 `＿write_to_log_init` 中，第 `7` 行如果发现函数指针 `write_to_log` 指向的是自己，那么就会调用函数 `open` 打开系统中的日志设备文件，并且把得到的文件描述符保存在全局数组 `log_fds` 中。
+在函数 `__write_to_log_init` 中，第 `7` 行如果发现函数指针 `write_to_log` 指向的是自己，那么就会调用函数 `open` 打开系统中的日志设备文件，并且把得到的文件描述符保存在全局数组 `log_fds` 中。
 
  `LOG_ID_MAIN` 、 `LOG_ID_RADIO` 、 `LOG_ID_EVENTS` 、 `LOG_ID_SYSTEM` 和 `LOG_ID_MAX` 是五个枚举值，它们的定义如下所示。
 
@@ -1032,7 +1044,7 @@ typedef enum {
 #define LOGGER_LOG_EVENTS	"log/events"
 #define LOGGER_LOG_SYSTEM	"log/system"
 ```
-因此，函数 `＿write_to_log_init` 的第8行到第11行实际上是调用宏 `log_open` 来打开 `/dev/log/main` 、 `/dev/log/radio` 、 `/dev/log/main` 和 `/dev/log/system` 四个日志设备文件。宏 `log_open` 的定义如下所示。
+因此，函数 `__write_to_log_init` 的第8行到第11行实际上是调用宏 `log_open` 来打开 `/dev/log/main` 、 `/dev/log/radio` 、 `/dev/log/events` 和 `/dev/log/system` 四个日志设备文件。宏 `log_open` 的定义如下所示。
 
 `system/core/liblog/logd_write.c`
 ```cpp
@@ -1049,9 +1061,9 @@ typedef enum {
 ```
 在正式环境中编译日志库 `liblog` 时，宏 `FAKE_LOG_DEVICE` 的值定义为 `0` ，因此，宏 `log_open` 实际上指向的是打开文件操作函数 `open` 。从这里同时也可以看到，在正式环境中，宏 `log_writev` 和 `log_close` 分别指向写文件操作函数 `writev` 和关闭文件操作函数 `close` 。
 
-回到函数 `＿write_to_log_init` 中，第 `15` 行的 `if` 语句判断  `/dev/log/main`  、 `/dev/log/radio` 和  `/dev/log/main`  三个日志设备文件是否都打开成功。如果是，就将函数指针 `write_to_log` 指向函数 `＿write_to_log_kernel` ；否则，将函数指针 `write_to_log` 指向函数 `＿write_to_log_null` 。第26行的if语句判断日志设备文件 `/dev/log/system` 是否打开成功。如果不成功，就将`log_fds[LOG_ID_SYSTEM]`的值设置为 `log_fds[LOG_ID_MAIN]` ，即将类型为 `system` 和 `main` 的日志记录都写入到日志设备文件 `/dev/log/main` 中。
+回到函数 `__write_to_log_init` 中，第 `15` 行的 `if` 语句判断  `/dev/log/main`  、 `/dev/log/radio` 和  `/dev/log/events`  三个日志设备文件是否都打开成功。如果是，就将函数指针 `write_to_log` 指向函数 `__write_to_log_kernel` ；否则，将函数指针 `write_to_log` 指向函数 `__write_to_log_null` 。第26行的if语句判断日志设备文件 `/dev/log/system` 是否打开成功。如果不成功，就将`log_fds[LOG_ID_SYSTEM]`的值设置为 `log_fds[LOG_ID_MAIN]` ，即将类型为 `system` 和 `main` 的日志记录都写入到日志设备文件 `/dev/log/main` 中。
 
-**__write_to_log_kernel**
+### __write_to_log_kernel
 `system/core/liblog/logd_write.c`
 ```cpp
 
@@ -1079,7 +1091,7 @@ static int __write_to_log_kernel(log_id_t log_id, struct iovec *vec, size_t nr)
 
 > 如果调用宏 `log_writev` 写入日志记录时， `Logger` 日志驱动程序的返回值小于 `0` ，并且错误码等于 `EINTR` ，那么就需要重新执行写入日志记录的操作。这种情况一般出现在当前进程等待写入日志记录的过程中，刚好碰到有新的信号需要处理，这时候内核就会返回一个 `EINTR` 错误码给调用者，表示需要调用者再次执行相同的操作。
 
-**__write_to_log_null**
+### __write_to_log_null
 `system/core/liblog/logd_write.c`
 ```cpp
 static int __write_to_log_null(log_id_t log_fd, struct iovec *vec, size_t nr)
@@ -1089,7 +1101,7 @@ static int __write_to_log_null(log_id_t log_fd, struct iovec *vec, size_t nr)
 ```
 函数 `__write_to_log_null` 是一个空实现，什么也不做。在日志设备文件打开失败的情况下，函数指针 `write_to_log` 才会指向该函数。
 
-**__android_log_write**
+### __android_log_write
 `system/core/liblog/logd_write.c`
 ```cpp
 01 int __android_log_write(int prio, const char *tag, const char *msg)
@@ -1127,7 +1139,7 @@ static int __write_to_log_null(log_id_t log_fd, struct iovec *vec, size_t nr)
 
 > 第 `20` 行到第 `25` 行首先将日志记录的优先级、标签和内容保存在数组元素 `vec[0]` 、 `vec[1]` 和 `vec[2]` 中，然后再将它们写入到 `Logger` 日志驱动程序中。日志记录的标签和内容的类型均为字符串，它们后面紧跟着的字符串结束字符 `\0` 也被写入到 `Logger` 日志驱动程序中。这样做的好处是，可以通过字符串结束字符 `\0` 来解析日志记录的标签字段和内容字段。
 
-**__android_log_buf_write**
+### __android_log_buf_write
 `system/core/liblog/logd_write.c`
 ```cpp
 int __android_log_buf_write(int bufID, int prio, const char *tag, const char *msg)
@@ -1158,11 +1170,11 @@ int __android_log_buf_write(int bufID, int prio, const char *tag, const char *ms
     return write_to_log(bufID, vec, 3);
 }
 ```
-函数 `__android_log_buf_write` 的实现与函数 `＿android_log_write` 的实现类似，不过它可以指定写入的日志记录的类型。特别地，如果要写入的日志记录的标签以 `RIL` 开头或者等于 `HTC_RIL` 、 `AT` 、 `GSM` 、 `STK` 、 `CDMA` 、 `PHONE` 或 `SMS` ，那么它们就会被认为是类型为 `radio` 的日志记录。
+函数 `__android_log_buf_write` 的实现与函数 `__android_log_write` 的实现类似，不过它可以指定写入的日志记录的类型。特别地，如果要写入的日志记录的标签以 `RIL` 开头或者等于 `HTC_RIL` 、 `AT` 、 `GSM` 、 `STK` 、 `CDMA` 、 `PHONE` 或 `SMS` ，那么它们就会被认为是类型为 `radio` 的日志记录。
 
-函数 `＿android_log_buf_write` 与前面分析的函数 `＿android_log_write` 一样，把紧跟在日志记录标签和内容后面的字符串结束符号 '\0' 也写入到 `Logger` 日志驱动程序中，目的也是为了以后从 `Logger` 日志驱动程序读取日志时，可以方便地将日志记录的标签字段和内容字段解析出来。
+函数 `__android_log_buf_write` 与前面分析的函数 `__android_log_write` 一样，把紧跟在日志记录标签和内容后面的字符串结束符号 `\0` 也写入到 `Logger` 日志驱动程序中，目的也是为了以后从 `Logger` 日志驱动程序读取日志时，可以方便地将日志记录的标签字段和内容字段解析出来。
 
-**＿android_log_vprint 、＿android_log_print、＿android_log_assert**
+### __android_log_vprint 、__android_log_print 、 __android_log_assert
 `system/core/liblog/logd_write.c`
 ```cpp
 int __android_log_vprint(int prio, const char *tag, const char *fmt, va_list ap)
@@ -1202,9 +1214,9 @@ void __android_log_assert(const char *cond, const char *tag,
 }
 ```
 
-函数 `＿android_log_vprint` `、＿android_log_print` 和 `＿android_log_assert` 都是调用函数 `＿android_log_write` 向 `Logger` 日志驱动程序中写入日志记录的，它们都可以使用格式化字符串来描述要写入的日志记录内容。
+函数 `__android_log_vprint` `、__android_log_print` 和 `__android_log_assert` 都是调用函数 `__android_log_write` 向 `Logger` 日志驱动程序中写入日志记录的，它们都可以使用格式化字符串来描述要写入的日志记录内容。
 
-**＿android_log_buf_print**
+### __android_log_buf_print
 `system/core/liblog/logd_write.c`
 ```cpp
 int __android_log_buf_print(int bufID, int prio, const char *tag, const char *fmt, ...)
@@ -1219,9 +1231,9 @@ int __android_log_buf_print(int bufID, int prio, const char *tag, const char *fm
     return __android_log_buf_write(bufID, prio, tag, buf);
 }
 ```
-函数 `＿android_log_buf_print` 是调用函数 `＿android_log_buf_write` 向 `Logger` 日志驱动程序中写入日志记录的，它可以指定要写入的日志记录的类型，以及使用格式化字符串来描述要写入的日志记录内容。
+函数 `__android_log_buf_print` 是调用函数 `__android_log_buf_write` 向 `Logger` 日志驱动程序中写入日志记录的，它可以指定要写入的日志记录的类型，以及使用格式化字符串来描述要写入的日志记录内容。
 
-**＿android_log_bwrite、＿android_log_btwrite**
+### __android_log_bwrite 、 __android_log_btwrite
 `system/core/liblog/logd_write.c`
 ```cpp
 int __android_log_bwrite(int32_t tag, const void *payload, size_t len)
@@ -1256,7 +1268,7 @@ int __android_log_btwrite(int32_t tag, char type, const void *payload,
     return write_to_log(LOG_ID_EVENTS, vec, 3);
 }
 ```
-函数 `＿android_log_bwrite` 和 `＿android_log_btwrite` 写入的日志记录的类型为 `events` 。其中，函数 `＿android_log_bwrite` 写入的日志记录的内容可以由多个值组成，而函数 `＿android_log_btwrite` 写入的日志记录的内容只有一个值。在前面的 `4.1` 小节中提到，类型为 `events` 的日志记录的内容一般是由一系列值组成的，每一个值都有自己的名称、类型和单位。函数 `＿android_log_btwrite` 就是通过第二个参数 `type` 来指定要写入的日志记录内容的值类型的，由于它写入的日志记录的内容只有一个值，因此，为了方便读取，就把这个值的类型抽取出来，作为一个独立的字段写入到 `Logger` 日志驱动程序中。
+函数 `__android_log_bwrite` 和 `__android_log_btwrite` 写入的日志记录的类型为 `events` 。其中，函数 `__android_log_bwrite` 写入的日志记录的内容可以由多个值组成，而函数 `__android_log_btwrite` 写入的日志记录的内容只有一个值。在前面的 `4.1` 小节中提到，类型为 `events` 的日志记录的内容一般是由一系列值组成的，每一个值都有自己的名称、类型和单位。函数 `__android_log_btwrite` 就是通过第二个参数 `type` 来指定要写入的日志记录内容的值类型的，由于它写入的日志记录的内容只有一个值，因此，为了方便读取，就把这个值的类型抽取出来，作为一个独立的字段写入到 `Logger` 日志驱动程序中。
 
 ## 4.4　C/C++日志写入接口
 在前面的 `4.3` 小节中，我们介绍了 `Android` 系统运行时库层的日志库写入接口，但是在实际开发中，我们一般不会直接使用这些接口来写日志。在实际开发中，我们常常希望有些日志只在程序的调试版本中输出，而不希望它们在发布版本中输出。 `Android` 系统就提供了三组常用的 `C/C++` 宏来封装日志写入接口，这些宏有的在程序的非调试版本中只是一个空定义，因此，可以避免在程序的发布版本中输出日志。
@@ -1304,6 +1316,7 @@ int __android_log_btwrite(int32_t tag, char type, const void *payload,
 
 了解了这两个宏的定义之后，我们就开始分析这三组 `C/C++` 日志宏的实现。
 
+### LOGV 、 LOGD 、 LOGI 、 LOGW 和 LOGE
 `system/core/include/cutils/log.h`
 ```cpp
 /*
@@ -1394,8 +1407,9 @@ typedef enum android_LogPriority {
     ANDROID_LOG_SILENT,     /* only for SetMinPriority(); must be last */
 } android_LogPriority;
 ```
-回到宏 `LOG_PRI` 的定义中，它最终是通过调用日志库 `liblog` 提供的函数 `＿android_log_print` 向 `Logger` 日志驱动程序中写入日志记录的。函数 `＿android_log_print` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
+回到宏 `LOG_PRI` 的定义中，它最终是通过调用日志库 `liblog` 提供的函数 `__android_log_print` 向 `Logger` 日志驱动程序中写入日志记录的。函数 `__android_log_print` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
 
+### SLOGV 、 SLOGD 、 SLOGI 、 SLOGW 和 SLOGE
 `system/core/include/cutils/log.h`
 ```cpp
 /*
@@ -1439,12 +1453,9 @@ typedef enum android_LogPriority {
 ```
 这五个宏是用来写入类型为 `system` 的日志记录的，它们写入的日志记录的优先级分别为 `VERBOSE` 、 `DEBUG` 、 `INFO` 、 `WARN` 和 `ERROR` 。其中，宏 `SLOGV` 只有在宏 `LOG_NDEBUG` 定义为 `0` 时，即在程序的调试版本中，才是有效的；否则，它只是一个空定义。
 
-这五个宏展开之后，实际上是通过调用日志库 `liblog` 提供的函数 `＿android_log_buf_print` 向 `Logger` 日志驱动程序中写入日志记录的。函数 `＿android_log_buf_print` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
+这五个宏展开之后，实际上是通过调用日志库 `liblog` 提供的函数 `__android_log_buf_print` 向 `Logger` 日志驱动程序中写入日志记录的。函数 `__android_log_buf_print` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
 
-这三个宏是用来写入类型为 `events` 的日志记录的。第 `6` 行到第 `9` 行首先定义了四个枚举值，它们分别用来代表一个整数（ `int` ）、长整数（ `long` ）、字符串（ `string` ）和列表（ `list` ）。前面提到，类型为 `events` 的日志记录的内容是由一系列值组成的，这些值是具有类型的，分别对应于 `EVENT_TYPE_INT` 、 `EVENT_TYPE_LONG` 、 `EVENT_TYPE_STRING` 和 `EVENT_TYPE_LIST` 四种类型。
-
-宏 `LOG_EVENT_INT` 和 `LOG_EVENT_LONG` 写入的日志记录的内容分别是一个整数和一个长整数。它们展开之后，实际上是通过调用日志库 `liblog` 提供的函数 `＿android_log_btwrite` 来往 `Logger` 日志驱动程序中写入日志记录的。函数 `＿android_log_btwrite` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
-
+### EVENT_TYPE_INT 、 EVENT_TYPE_LONG 和 EVENT_TYPE_STRING 
 `system/core/include/cutils/log.h`
 ```cpp
 /*
@@ -1475,7 +1486,11 @@ typedef enum {
 #define android_btWriteLog(tag, type, payload, len) \
     __android_log_btwrite(tag, type, payload, len)
 ```
-宏 `LOG_EVENT_STRING` 用来往 `Logger` 日志驱动程序中写入一条内容为字符串值的日志记录，但是在目前版本的实现中，它只是一个空定义。此外，在目前版本中，系统也没有定义一个用来写入内容为列表的日志记录宏。因此，如果需要往 `Logger` 日志驱动程序中写入一条内容为字符串或者列表的日志记录，那么就必须直接使用日志库 `liblog` 提供的函数 `＿android_log_bwrite` 或者 `＿android_log_btwrite` 。
+这三个宏是用来写入类型为 `events` 的日志记录的。第 `6` 行到第 `9` 行首先定义了四个枚举值，它们分别用来代表一个整数（ `int` ）、长整数（ `long` ）、字符串（ `string` ）和列表（ `list` ）。前面提到，类型为 `events` 的日志记录的内容是由一系列值组成的，这些值是具有类型的，分别对应于 `EVENT_TYPE_INT` 、 `EVENT_TYPE_LONG` 、 `EVENT_TYPE_STRING` 和 `EVENT_TYPE_LIST` 四种类型。
+
+宏 `LOG_EVENT_INT` 和 `LOG_EVENT_LONG` 写入的日志记录的内容分别是一个整数和一个长整数。它们展开之后，实际上是通过调用日志库 `liblog` 提供的函数 `__android_log_btwrite` 来往 `Logger` 日志驱动程序中写入日志记录的。函数 `__android_log_btwrite` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
+
+宏 `LOG_EVENT_STRING` 用来往 `Logger` 日志驱动程序中写入一条内容为字符串值的日志记录，但是在目前版本的实现中，它只是一个空定义。此外，在目前版本中，系统也没有定义一个用来写入内容为列表的日志记录宏。因此，如果需要往 `Logger` 日志驱动程序中写入一条内容为字符串或者列表的日志记录，那么就必须直接使用日志库 `liblog` 提供的函数 `__android_log_bwrite` 或者 `__android_log_btwrite` 。
 
 ## 4.5　Java日志写入接口
 
@@ -1590,7 +1605,7 @@ static jint android_util_Log_println_native(JNIEnv* env, jobject clazz,
     return res;
 }
 ```
-在 `JNI` 函数 `android_util_Log_println_native` 中，第 `11` 行到 `19` 行代码检查写入的日志记录的内容 `msgObj` 是否为 `null` ，接着第 `21` 行到 `29` 行代码检查写入的日志记录的类型值是否位于 `0` 和 `LOG_ID_MAX` 之间，其中， `0` 、 `1` 、 `2` 和 `3` 四个值表示的日志记录的类型分别为 `main` 、 `radio` 、 `events` 和 `system` 。通过这两个合法性检查之后，最后第 `35` 行就调用日志库 `liblog` 提供的函数 `＿android_log_buf_write` 来往 `Logger` 日志驱动程序中写入日志记录。函数 `＿android_log_buf_write` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
+在 `JNI` 函数 `android_util_Log_println_native` 中，第 `11` 行到 `19` 行代码检查写入的日志记录的内容 `msgObj` 是否为 `null` ，接着第 `21` 行到 `29` 行代码检查写入的日志记录的类型值是否位于 `0` 和 `LOG_ID_MAX` 之间，其中， `0` 、 `1` 、 `2` 和 `3` 四个值表示的日志记录的类型分别为 `main` 、 `radio` 、 `events` 和 `system` 。通过这两个合法性检查之后，最后第 `35` 行就调用日志库 `liblog` 提供的函数 `__android_log_buf_write` 来往 `Logger` 日志驱动程序中写入日志记录。函数 `__android_log_buf_write` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
 
 **android.util.Slog**
 
@@ -1706,7 +1721,7 @@ static jint android_util_EventLog_writeEvent_Long(JNIEnv* env, jobject clazz,
 #define android_btWriteLog(tag, type, payload, len) \
     __android_log_btwrite(tag, type, payload, len)
 ```
-它指向了日志库 `liblog` 提供的函数 `＿android_log_btwrite` 。函数 `＿android_log_btwrite` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
+它指向了日志库 `liblog` 提供的函数 `__android_log_btwrite` 。函数 `__android_log_btwrite` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
 
 接下来，我们分析写入字符串类型日志记录的 `JNI` 方法 `writeEvent` 的实现。
 
@@ -1749,7 +1764,7 @@ static jint android_util_EventLog_writeEvent_Long(JNIEnv* env, jobject clazz,
 #define android_bWriteLog(tag, payload, len) \
     __android_log_bwrite(tag, payload, len)
 ```
-它指向了日志库 `liblog` 提供的函数 `＿android_log_bwrite` 。函数 `＿android_log_bwrite` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
+它指向了日志库 `liblog` 提供的函数 `__android_log_bwrite` 。函数 `__android_log_bwrite` 的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
 
 最后，我们分析写入列表类型日志记录的 `JNI` 方法 `writeEvent` 的实现。
 
@@ -1815,6 +1830,6 @@ static jint android_util_EventLog_writeEvent_Long(JNIEnv* env, jobject clazz,
 
 ![](pic/2020-11-16-20-53-07.png)
 
-函数第 `52` 行使用了宏 `android_bWriteLog` 将日志记录写入到 `Logger` 日志驱动程序中。前面提到，宏 `android_bWriteLog` 指向的是日志库 `liblog` 提供的函数 `＿android_log_bwrite` ，它的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
+函数第 `52` 行使用了宏 `android_bWriteLog` 将日志记录写入到 `Logger` 日志驱动程序中。前面提到，宏 `android_bWriteLog` 指向的是日志库 `liblog` 提供的函数 `__android_log_bwrite` ，它的实现可以参考前面 `4.3` 小节的内容，这里不再详述。
 
 至此，我们就介绍完了 `Android` 系统的日志写入接口。接下来，我们继续分析如何读取并且显示 `Logger` 日志驱动程序中的日志记录。
